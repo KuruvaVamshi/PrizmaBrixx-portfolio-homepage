@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>prizmaBrixx | Architectural Visualization & Digital Innovation</title>
+    <!-- Fonts from Fontshare & Google Fonts -->
+    <link
+        href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700,900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- GSAP and ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis Smooth Scroll CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+    <style>
+        /* ── SYSTEM DESIGN TOKENS ── */
+        :root {
+            --bg: #050506;
+            --surface: #0a0a0c;
+            --surface-card: #0e0e11;
+            --surface-glass: rgba(10, 10, 12, 0.6);
+            --border-glass: rgba(255, 255, 255, 0.06);
+            --border-glow: rgba(212, 175, 55, 0.15);
+
+            --gold: #d4af37;
+            --gold-bright: #ffd700;
+            --gold-glow: rgba(212, 175, 55, 0.3);
+            --white: #ffffff;
+            --muted: #8e8e9c;
+            --cyan: #64ffda;
+            --cyan-glow: rgba(100, 255, 218, 0.2);
+            --red: #ff4d6d;
+            --green: #4ade80;
+
+            --font-display: 'Clash Display', sans-serif;
+            --font-body: 'Satoshi', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+
+            --transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* ── RESET & BASE ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--white);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            font-size: 15px;
+            line-height: 1.6;
+            letter-spacing: -0.01em;
+        }
+
+        /* Lenis smooth scroll specific requirements */
+        html.lenis {
+            height: auto;
+        }
+
+        .lenis-smooth {
+            scroll-behavior: auto !important;
+        }
+
+        .lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(212, 175, 55, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gold);
+        }
+
+        /* ── TYPOGRAPHY UTILITIES ── */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: var(--font-display);
+            font-weight: 500;
+            line-height: 1.1;
+        }
+
+        .text-glow-gold {
+            text-shadow: 0 0 20px var(--gold-glow);
+        }
+
+        .text-glow-cyan {
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        /* ── PRELOADER ── */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            overflow: hidden;
+            transition: opacity 1s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+
+        #preloader-canvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .preloader-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .preloader-logo-img {
+            max-width: clamp(200px, 35vw, 360px);
+            height: auto;
+            opacity: 0;
+            filter: blur(20px);
+            transform: scale(0.9);
+            will-change: transform, opacity, filter;
+        }
+
+        .preloader-tagline {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--gold);
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .preloader-counter {
+            font-family: var(--font-mono);
+            font-size: clamp(24px, 4vw, 42px);
+            color: var(--white);
+            margin-top: 30px;
+            opacity: 0;
+        }
+
+        .preloader-progress-bar {
+            width: 160px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .preloader-progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold), var(--cyan));
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        /* ── CUSTOM CURSOR ── */
+        #custom-cursor {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--gold);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+
+        #custom-cursor-dot {
+            width: 4px;
+            height: 4px;
+            background-color: var(--gold);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ── NAVIGATION BAR ── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 90px;
+            padding: 0 8%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-glass);
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: height 0.3s, background-color 0.3s;
+        }
+
+        .navbar.scrolled {
+            height: 70px;
+            background: rgba(5, 5, 6, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+        }
+
+        .nav-logo {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-logo-img {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.25));
+            transition: var(--transition);
+        }
+
+        .nav-logo:hover .nav-logo-img {
+            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.45));
+            transform: scale(1.03);
+        }
+
+        .nav-logo-text {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--white);
+            transition: var(--transition);
+        }
+
+        .nav-logo-text span {
+            color: var(--gold);
+        }
+
+        .nav-logo:hover .nav-logo-text {
+            text-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 36px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            position: relative;
+            padding: 8px 0;
+            transition: var(--transition);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--gold);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            color: var(--white);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 10px 22px;
+            border-radius: 2px;
+            transition: var(--transition);
+            background: transparent;
+        }
+
+        .nav-cta:hover {
+            background: var(--gold);
+            color: var(--bg);
+            box-shadow: 0 0 15px var(--gold-glow);
+            transform: translateY(-2px);
+        }
+
+        /* ── LAYOUT & SECTIONS ── */
+        .section-container {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 120px 8%;
+            border-bottom: 1px solid var(--border-glass);
+            z-index: 5;
+            background-color: var(--bg);
+        }
+
+        /* ── HERO SECTION ── */
+        #hero-section {
+            background-color: var(--bg);
+            flex-direction: column;
+            text-align: center;
+            z-index: 1;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero-eyebrow {
+            font-family: var(--font-mono);
+            font-size: clamp(10px, 1.5vw, 13px);
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 24px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero-title {
+            font-size: clamp(48px, 9vw, 120px);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            line-height: 0.95;
+            color: var(--white);
+            margin-bottom: 24px;
+            opacity: 0;
+            filter: blur(20px);
+            transform: translateY(40px);
+        }
+
+        .hero-title span {
+            color: var(--gold);
+            text-shadow: 0 0 40px var(--gold-glow);
+            -webkit-text-stroke: none;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(15px, 2vw, 20px);
+            color: var(--muted);
+            max-width: 680px;
+            line-height: 1.6;
+            margin-bottom: 50px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero-scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: 0.30em;
+            text-transform: uppercase;
+            color: var(--muted);
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .hero-scroll-line {
+            width: 1px;
+            height: 50px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-scroll-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: var(--white);
+            animation: scroll-dot 2.5s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+        }
+
+        @keyframes scroll-dot {
+            0% {
+                transform: translateY(-20px);
+            }
+
+            100% {
+                transform: translateY(50px);
+            }
+        }
+
+        /* ── SECTION STRUCTS ── */
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1.9fr;
+            width: 100%;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section-index {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--gold);
+            letter-spacing: 0.15em;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 6px;
+        }
+
+        .section-heading {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            color: var(--white);
+        }
+
+        .section-desc {
+            color: var(--muted);
+            margin-bottom: 20px;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .section-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .section-features li {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--white);
+        }
+
+        .section-features li::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: var(--gold);
+            border-radius: 50%;
+        }
+
+        .section-visual {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border-glass);
+            border-radius: 4px;
+            aspect-ratio: 16/10;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Glow nodes in visual panel edges */
+        .section-visual::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        /* ── SERVICE V1: 2D ARCHITECTURAL DRAWINGS ── */
+        .blueprint-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: #040810;
+            overflow: hidden;
+        }
+
+        .blueprint-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(100, 255, 218, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 255, 218, 0.04) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .blueprint-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+        }
+
+        .blueprint-svg path {
+            stroke: var(--cyan);
+            stroke-width: 1.5;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .blueprint-svg line {
+            stroke: rgba(100, 255, 218, 0.3);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+        }
+
+        .blueprint-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--cyan);
+            letter-spacing: 0.1em;
+            pointer-events: none;
+        }
+
+        /* ── SERVICE V2: 3D ULTRA-REALISTIC RENDERS ── */
+        .slider-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: ew-resize;
+        }
+
+        .slider-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .slider-img.day {
+            background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80');
+            z-index: 1;
+        }
+
+        .slider-img.night {
+            background-image: url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1920&q=80');
+            z-index: 2;
+            clip-path: inset(0 0 0 50%);
+        }
+
+        .slider-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: var(--gold);
+            z-index: 3;
+            transform: translateX(-50%);
+            box-shadow: 0 0 15px var(--gold-bright);
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 2px solid var(--gold);
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .slider-handle::before,
+        .slider-handle::after {
+            content: '';
+            border: solid var(--gold);
+            border-width: 0 2px 2px 0;
+            display: inline-block;
+            padding: 3px;
+        }
+
+        .slider-handle::before {
+            transform: rotate(135deg);
+            margin-right: 2px;
+        }
+
+        .slider-handle::after {
+            transform: rotate(-45deg);
+            margin-left: 2px;
+        }
+
+        .slider-label {
+            position: absolute;
+            bottom: 20px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: rgba(5, 5, 6, 0.85);
+            padding: 6px 14px;
+            border: 1px solid var(--border-glass);
+            z-index: 3;
+            border-radius: 2px;
+        }
+
+        .slider-label.day-label {
+            left: 20px;
+            color: var(--white);
+        }
+
+        .slider-label.night-label {
+            right: 20px;
+            color: var(--gold);
+        }
+
+        /* ── SERVICE V3: WALKTHROUGH ANIMATIONS ── */
+        .parallax-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at center, #111116 0%, #050506 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .parallax-layer {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            background-size: cover;
+            background-position: center;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-glass);
+            background-color: var(--surface-glass);
+            backdrop-filter: blur(5px);
+        }
+
+        .p-bg {
+            background-image: url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80');
+            width: 90%;
+            height: 90%;
+            filter: brightness(0.4) saturate(0.5);
+            z-index: 1;
+        }
+
+        .p-mid {
+            width: 60%;
+            height: 60%;
+            border-color: rgba(212, 175, 55, 0.2);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        .p-mid-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: auto;
+        }
+
+        .p-mid-box {
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            height: 60px;
+            border-radius: 2px;
+        }
+
+        .p-fg {
+            width: 40%;
+            height: 40%;
+            border-color: var(--gold);
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(14, 14, 17, 0.85);
+            text-align: center;
+            padding: 16px;
+        }
+
+        .p-fg-monogram {
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--gold);
+            letter-spacing: 0.1em;
+        }
+
+        .p-fg-line {
+            width: 30px;
+            height: 1px;
+            background: var(--gold);
+        }
+
+        .p-fg-title {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--white);
+            letter-spacing: 0.2em;
+        }
+
+        /* ── SERVICE V4: DRONE & FPV VIDEOGRAPHY ── */
+        .drone-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: url('https://images.unsplash.com/photo-1508873696983-2df519f0397e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .drone-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(5, 5, 6, 0.5), rgba(100, 255, 218, 0.1));
+            z-index: 1;
+        }
+
+        .drone-hud {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .drone-hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--cyan);
+        }
+
+        .drone-hud-rec {
+            color: var(--red);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .drone-hud-rec-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .drone-hud-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border: 1px solid rgba(100, 255, 218, 0.4);
+            border-radius: 50%;
+        }
+
+        .drone-hud-crosshair::before,
+        .drone-hud-crosshair::after {
+            content: '';
+            position: absolute;
+            background: var(--cyan);
+        }
+
+        .drone-hud-crosshair::before {
+            width: 16px;
+            height: 1px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .drone-hud-crosshair::after {
+            width: 1px;
+            height: 16px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .drone-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .drone-flight-path {
+            stroke: var(--cyan);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 6 6;
+            stroke-linecap: round;
+        }
+
+        .drone-blip {
+            fill: var(--cyan);
+            filter: drop-shadow(0 0 8px var(--cyan));
+        }
+
+        .drone-hud-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--cyan);
+        }
+
+        /* ── SERVICE V5: MASTER TOWNSHIP PLANNING ── */
+        .township-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #090a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .township-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .township-map {
+            position: relative;
+            width: 80%;
+            height: 80%;
+            z-index: 2;
+        }
+
+        .township-sector {
+            fill: rgba(212, 175, 55, 0.05);
+            stroke: rgba(212, 175, 55, 0.3);
+            stroke-width: 1;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .township-sector:hover {
+            fill: rgba(212, 175, 55, 0.25);
+            stroke: var(--gold);
+            stroke-width: 2;
+            filter: drop-shadow(0 0 10px var(--gold-glow));
+        }
+
+        .township-sector.active {
+            fill: rgba(100, 255, 218, 0.2);
+            stroke: var(--cyan);
+            stroke-width: 2;
+            filter: drop-shadow(0 0 12px var(--cyan-glow));
+        }
+
+        .township-hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(14, 14, 17, 0.9);
+            border: 1px solid var(--border-glass);
+            border-left: 2px solid var(--gold);
+            padding: 16px 20px;
+            border-radius: 2px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            min-width: 240px;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .township-hud-val {
+            color: var(--white);
+            font-weight: 700;
+        }
+
+        .township-hud-lbl {
+            color: var(--muted);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* ── SERVICE V6: VIDEO EDITING & REELS ── */
+        .editor-container {
+            width: 100%;
+            height: 100%;
+            background: #09090b;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .editor-monitor {
+            flex: 1;
+            background: #020202;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .editor-video-source {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-image: url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            transition: filter 0.3s;
+        }
+
+        .editor-hud {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 10px;
+            border-radius: 2px;
+            color: var(--white);
+        }
+
+        .editor-controls {
+            height: 120px;
+            background: #0f0f13;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            position: relative;
+        }
+
+        .editor-tracks {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .editor-track {
+            height: 28px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.05);
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .editor-clip {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #3d2f13 0%, #d4af37 100%);
+            border: 1px solid var(--gold);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-family: var(--font-mono);
+            font-size: 8px;
+            color: var(--white);
+            cursor: pointer;
+        }
+
+        .editor-clip.audio {
+            background: linear-gradient(90deg, #1b3d3d 0%, #1e8585 100%);
+            border-color: var(--cyan);
+        }
+
+        .editor-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 10%;
+            width: 2px;
+            background: var(--red);
+            z-index: 5;
+            pointer-events: none;
+            box-shadow: 0 0 10px var(--red);
+        }
+
+        .editor-playhead::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--red);
+        }
+
+        /* ── SERVICE D1: INTERACTIVE AVAILABILITY TOOLS ── */
+        .dash-container {
+            width: 100%;
+            height: 100%;
+            background: #08080a;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 14px;
+        }
+
+        .dash-title {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .dash-legend {
+            display: flex;
+            gap: 16px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.available {
+            background: var(--green);
+        }
+
+        .legend-dot.reserved {
+            background: var(--gold);
+        }
+
+        .legend-dot.sold {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            flex: 1;
+        }
+
+        .dash-plot {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-glass);
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dash-plot:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .dash-plot.available {
+            border-left: 3px solid var(--green);
+        }
+
+        .dash-plot.reserved {
+            border-left: 3px solid var(--gold);
+        }
+
+        .dash-plot.sold {
+            border-left: 3px solid rgba(255, 255, 255, 0.2);
+            opacity: 0.6;
+        }
+
+        .dash-plot-num {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .dash-plot-area {
+            font-family: var(--font-display);
+            font-size: 16px;
+            color: var(--white);
+            margin: 6px 0;
+        }
+
+        .dash-plot-status {
+            font-family: var(--font-mono);
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .dash-plot.available .dash-plot-status {
+            color: var(--green);
+        }
+
+        .dash-plot.reserved .dash-plot-status {
+            color: var(--gold);
+        }
+
+        .dash-plot.sold .dash-plot-status {
+            color: var(--muted);
+        }
+
+        /* ── SERVICE D2: VR EXPERIENCE CENTERS ── */
+        .vr-container {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #0e121b 0%, #04060b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vr-lens-frame {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            border: 2px solid rgba(212, 175, 55, 0.4);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px var(--gold-glow), inset 0 0 20px rgba(0, 0, 0, 0.8);
+            cursor: move;
+        }
+
+        .vr-panoramic {
+            position: absolute;
+            width: 800px;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            filter: saturate(0.6) brightness(0.6);
+            left: -260px;
+        }
+
+        .vr-hotspot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .vr-hotspot-ring {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--cyan);
+            animation: pulse-ring 2s infinite;
+        }
+
+        .vr-hotspot-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: var(--white);
+            border-radius: 50%;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.6);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+        }
+
+        .vr-hud-arc {
+            position: absolute;
+            inset: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* ── SERVICE D3: CUSTOM MOBILE APP SOLUTIONS ── */
+        .app-container {
+            width: 100%;
+            height: 100%;
+            perspective: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #0f1016 0%, #050506 100%);
+        }
+
+        .phone-mockup {
+            width: 180px;
+            height: 360px;
+            background: #0b0c10;
+            border-radius: 28px;
+            border: 4px solid #1a1b22;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(20deg) rotateY(-20deg) rotateZ(5deg);
+            box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.8), -5px -5px 15px rgba(255, 255, 255, 0.02);
+            transition: transform 0.15s ease-out;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-screen {
+            flex: 1;
+            border-radius: 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #070709;
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .phone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 8px;
+            color: var(--muted);
+        }
+
+        .phone-logo {
+            font-family: var(--font-display);
+            font-size: 10px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .phone-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .phone-card {
+            background: #0f1118;
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90px;
+        }
+
+        .phone-card-img {
+            height: 50px;
+            background-size: cover;
+            background-position: center;
+            background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');
+        }
+
+        .phone-card-info {
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .phone-card-title {
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .phone-card-price {
+            font-size: 7px;
+            font-family: var(--font-mono);
+            color: var(--gold);
+        }
+
+        .phone-navbar {
+            height: 24px;
+            background: #0a0a0d;
+            border-top: 1px solid var(--border-glass);
+            border-radius: 0 0 24px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .phone-nav-icon {
+            width: 6px;
+            height: 6px;
+            background: var(--muted);
+            border-radius: 50%;
+        }
+
+        .phone-nav-icon.active {
+            background: var(--gold);
+        }
+
+        /* ── SERVICE D4: PREMIUM BROCHURE & GRAPHIC DESIGN ── */
+        .catalog-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            background: #08080a;
+        }
+
+        .book-spread {
+            width: 380px;
+            height: 260px;
+            display: flex;
+            transform-style: preserve-3d;
+            transform: rotateX(15deg);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .book-page-half {
+            width: 190px;
+            height: 100%;
+            background: #0f1013;
+            border: 1px solid var(--border-glass);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .book-page-left {
+            border-radius: 4px 0 0 4px;
+            background: linear-gradient(90deg, #090a0c 0%, #0f1013 100%);
+            border-right: none;
+        }
+
+        .book-page-right {
+            border-radius: 0 4px 4px 0;
+            background: linear-gradient(90deg, #0f1013 0%, #090a0c 100%);
+            border-left: 1px solid rgba(255, 255, 255, 0.02);
+            transform-origin: left center;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        .book-spread:hover .book-page-right {
+            transform: rotateY(-30deg);
+        }
+
+        .book-logo {
+            font-family: var(--font-display);
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+        }
+
+        .book-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .book-title {
+            font-family: var(--font-display);
+            font-size: 16px;
+            line-height: 1.2;
+            color: var(--white);
+        }
+
+        .book-visual {
+            height: 80px;
+            background: linear-gradient(135deg, #1b1c22 0%, #2f2818 100%);
+            border: 1px dashed rgba(212, 175, 55, 0.2);
+            border-radius: 2px;
+        }
+
+        .book-footer {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 7px;
+            color: var(--muted);
+        }
+
+        /* ── SERVICE D5: LEAD GEN FUNNEL & SMART CRM ── */
+        .crm-container {
+            width: 100%;
+            height: 100%;
+            background: #080809;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-family: var(--font-body);
+        }
+
+        .crm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .crm-title {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--white);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .crm-badge {
+            background: rgba(100, 255, 218, 0.1);
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            color: var(--cyan);
+            font-family: var(--font-mono);
+            font-size: 8px;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .crm-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .crm-stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            padding: 10px;
+            border-radius: 2px;
+            text-align: center;
+        }
+
+        .crm-stat-lbl {
+            font-size: 8px;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            margin-bottom: 4px;
+        }
+
+        .crm-stat-val {
+            font-family: var(--font-display);
+            font-size: 18px;
+            color: var(--gold);
+        }
+
+        .crm-chart-box {
+            flex: 1;
+            border: 1px solid var(--border-glass);
+            border-radius: 2px;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+        }
+
+        .crm-chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .crm-chart-line {
+            fill: none;
+            stroke: var(--cyan);
+            stroke-width: 2;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px var(--cyan-glow));
+        }
+
+        .crm-chart-fill {
+            fill: url(#crm-gradient);
+            opacity: 0.15;
+        }
+
+        .crm-leads-list {
+            height: 60px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .crm-lead-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-glass);
+            padding: 6px 12px;
+            font-size: 9px;
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            border-radius: 2px;
+        }
+
+        .crm-lead-name {
+            color: var(--white);
+        }
+
+        .crm-lead-time {
+            color: var(--muted);
+        }
+
+        .crm-lead-status {
+            color: var(--green);
+        }
+
+        /* ── FOOTER & CLOSING EXPERIENCE ── */
+        .footer-section {
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 8% 60px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-glow {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40vh;
+            background: radial-gradient(ellipse 50% 50% at 50% 100%, rgba(212, 175, 55, 0.08) 0%, transparent 80%);
+            pointer-events: none;
+        }
+
+        .footer-heading {
+            font-size: clamp(32px, 5.5vw, 68px);
+            font-weight: 500;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1;
+            margin-bottom: 50px;
+            max-width: 800px;
+        }
+
+        .footer-cta-container {
+            position: relative;
+            margin-bottom: 120px;
+        }
+
+        .magnetic-btn {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--white);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            transition: background-color 0.4s, color 0.4s, border-color 0.4s;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.05);
+        }
+
+        .magnetic-btn:hover {
+            background-color: var(--gold);
+            color: var(--bg);
+            border-color: var(--gold);
+            box-shadow: 0 0 40px var(--gold-glow);
+        }
+
+        .magnetic-btn-wrap {
+            display: inline-block;
+            position: relative;
+        }
+
+        .footer-bottom-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            border-top: 1px solid var(--border-glass);
+            padding-top: 60px;
+            margin-top: auto;
+        }
+
+        .footer-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .footer-col-title {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--gold);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .footer-col-content {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-social-link {
+            color: var(--muted);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-social-link:hover {
+            color: var(--white);
+        }
+
+        /* ── RESPONSIVE DESIGN (BREAKPOINTS) ── */
+        @media (max-width: 1024px) {
+            .section-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .navbar {
+                padding: 0 5%;
+            }
+
+            .footer-bottom-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                height: 70px;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .section-container {
+                padding: 100px 5%;
+            }
+
+            .footer-bottom-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .book-spread {
+                width: 300px;
+                height: 205px;
+            }
+
+            .book-page-half {
+                width: 150px;
+                padding: 12px;
+            }
+        }
+
+        /* ── PORTFOLIO OVERLAY MODAL ── */
+        #portfolio-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 4, 6, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #portfolio-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-wrapper {
+            background: rgba(10, 10, 12, 0.8);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1100px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 40px;
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(212, 175, 55, 0.03);
+            transform: scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212, 175, 55, 0.2) transparent;
+        }
+
+        #portfolio-modal.active .modal-wrapper {
+            transform: scale(1);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: transparent;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: var(--gold);
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+            z-index: 100;
+        }
+
+        .modal-close-btn:hover {
+            background: var(--gold);
+            color: var(--bg);
+            border-color: var(--gold);
+            box-shadow: 0 0 15px var(--gold-glow);
+            transform: rotate(90deg);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            padding-right: 40px;
+        }
+
+        .modal-service-tag {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--gold);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .modal-service-title {
+            font-size: clamp(20px, 3vw, 32px);
+            font-weight: 500;
+            text-transform: uppercase;
+            color: var(--white);
+            letter-spacing: -0.01em;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            background: rgba(4, 6, 10, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .project-card:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.05);
+        }
+
+        .project-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background: #04060a;
+        }
+
+        .project-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .project-card:hover .project-image {
+            transform: scale(1.08);
+        }
+
+        .project-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .project-location {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .project-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--white);
+            margin-bottom: 12px;
+        }
+
+        .project-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .project-metrics {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--gold);
+            letter-spacing: 0.05em;
+        }
+
+        .explore-btn {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 2px;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.05em;
+        }
+
+        .explore-btn:hover {
+            color: var(--gold);
+            border-color: var(--gold);
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .section-cta {
+            margin-top: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--white);
+            border: 1px solid var(--gold);
+            padding: 12px 28px;
+            border-radius: 4px;
+            transition: var(--transition);
+            background: rgba(212, 175, 55, 0.08);
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-cta:hover {
+            background: var(--gold);
+            color: var(--bg);
+            border-color: var(--gold);
+            box-shadow: 0 0 25px var(--gold-glow);
+            transform: translateY(-2px);
+        }
+
+        .section-cta svg {
+            transition: transform 0.3s ease;
+        }
+
+        .section-cta:hover svg {
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+
+<body class="lenis-smooth">
+
+    <!-- ── CUSTOM CURSOR ── -->
+    <div id="custom-cursor"></div>
+    <div id="custom-cursor-dot"></div>
+
+    <!-- ── PORTFOLIO OVERLAY MODAL ── -->
+    <div id="portfolio-modal">
+        <div class="modal-backdrop" id="modal-close-backdrop" style="position: absolute; inset: 0; z-index: 1;"></div>
+        <div class="modal-wrapper" style="z-index: 2;">
+            <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+            <div class="modal-header">
+                <div class="modal-service-tag" id="modal-service-tag">SEC.01 // SYSTEM MODULE</div>
+                <h3 class="modal-service-title" id="modal-service-title">Visualization Hub</h3>
+            </div>
+            <div class="modal-body">
+                <div class="projects-grid" id="modal-projects-grid">
+                    <!-- Dynamic project cards populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PRELOADER ── -->
+    <div id="preloader">
+        <canvas id="preloader-canvas"></canvas>
+        <div class="preloader-content">
+            <img src="logo.png" class="preloader-logo-img" alt="prizmaBrixx">
+            <div class="preloader-tagline">Building Visual Experiences Beyond Imagination</div>
+            <div class="preloader-progress-bar">
+                <div class="preloader-progress-fill"></div>
+            </div>
+            <div class="preloader-counter">0%</div>
+        </div>
+    </div>
+
+    <!-- ── FLOATING GLASS NAVIGATION ── -->
+    <nav class="navbar">
+        <a href="#hero-section" class="nav-logo">
+            <img src="logo.png" alt="PrizmaBrixx" class="nav-logo-img">
+            <span class="nav-logo-text">Prizma<span>Brixx</span></span>
+        </a>
+        <ul class="nav-menu">
+            <li><a href="#v1-section" class="nav-link">Visuals</a></li>
+            <li><a href="#d1-section" class="nav-link">Digital</a></li>
+            <li><a href="#footer-section" class="nav-link">Contact</a></li>
+        </ul>
+        <a href="#footer-section" class="nav-cta">Launch Project</a>
+    </nav>
+
+    <!-- ── HERO SECTION ── -->
+    <section id="hero-section" class="section-container">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+            <div class="hero-eyebrow">Creative Technology & Architectural Visualization</div>
+            <h1 class="hero-title">
+                Prizma<span>Brixx</span>
+            </h1>
+            <p class="hero-subtitle">
+                We build next-generation immersive visualization platforms, cinematic drone storytelling, and custom digital PropTech ecosystems.
+            </p>
+        </div>
+        <div class="hero-scroll-indicator" onclick="lenis.scrollTo('#v1-section')">
+            <span>Scroll to explore</span>
+            <div class="hero-scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ── CATEGORY 1: VISUAL & CREATIVE SOLUTIONS (V1 - V6) ── -->
+
+    <!-- V1: 2D ARCHITECTURAL DRAWINGS -->
+    <section id="v1-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.01 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">2D Architectural Drawings</h2>
+                <p class="section-desc">
+                    Meticulous layout plans, sections, and site elevations crafted with CAD precision. We translate raw
+                    structural design specifications into perfect vectors ready for render modeling.
+                </p>
+                <ul class="section-features">
+                    <li>Vector Layout Accuracy</li>
+                    <li>DWG/DXF Output Standards</li>
+                    <li>Layered Grid Specifications</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(1, '2D Architectural Drawings')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="blueprint-container">
+                    <div class="blueprint-grid"></div>
+                    <div class="blueprint-hud">SYS.COORD: AXIS_X_092 // WIRE_GRID_ON</div>
+                    <svg class="blueprint-svg" viewBox="0 0 300 200">
+                        <!-- House Blueprint layout sketch -->
+                        <line x1="20" y1="20" x2="280" y2="20" />
+                        <line x1="20" y1="20" x2="20" y2="180" />
+                        <line x1="280" y1="20" x2="280" y2="180" />
+                        <line x1="20" y1="180" x2="280" y2="180" />
+                        <line x1="150" y1="20" x2="150" y2="180" />
+                        <!-- Doors and windows lines -->
+                        <path id="blueprint-wall-1" d="M 30,30 L 270,30 L 270,170 L 30,170 Z" />
+                        <path id="blueprint-wall-2" d="M 150,30 L 150,110 L 210,110 L 210,170" />
+                        <path id="blueprint-door" d="M 150,110 A 40 40 0 0 1 190,150" />
+                        <!-- Dimension Lines -->
+                        <line x1="30" y1="15" x2="270" y2="15" />
+                        <line x1="30" y1="12" x2="30" y2="18" />
+                        <line x1="270" y1="12" x2="270" y2="18" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- V2: 3D ULTRA-REALISTIC RENDERS -->
+    <section id="v2-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.02 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">3D Ultra-Realistic Renders</h2>
+                <p class="section-desc">
+                    Harnessing photorealistic lighting, natural environmental effects, and custom architectural shaders
+                    to visualize luxury homes, brutalist structures, and modern developments.
+                </p>
+                <ul class="section-features">
+                    <li>Dynamic Lighting Studies</li>
+                    <li>Day & Dusk Custom Moods</li>
+                    <li>Rich Texturing & Foliage</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(2, '3D Ultra-Realistic Renders')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="slider-container" id="day-night-slider">
+                    <div class="slider-img day"></div>
+                    <div class="slider-img night"></div>
+                    <div class="slider-divider"></div>
+                    <div class="slider-handle"></div>
+                    <div class="slider-label day-label">08:00 AM // Crisp Day</div>
+                    <div class="slider-label night-label">07:30 PM // Golden Hour</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- V3: WALKTHROUGH ANIMATIONS -->
+    <section id="v3-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.03 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">Walkthrough Animations</h2>
+                <p class="section-desc">
+                    Immersive digital cinematic fly-throughs that transport stakeholders inside the layout. Experience
+                    depth, luxury, material transitions, and environmental scale.
+                </p>
+                <ul class="section-features">
+                    <li>Path Camera Tracking</li>
+                    <li>Subtle Keyframe Moves</li>
+                    <li>Physically Based Atmosphere</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(3, 'Walkthrough Animations')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="parallax-container" id="walkthrough-parallax">
+                    <div class="parallax-layer p-bg"></div>
+                    <div class="parallax-layer p-mid">
+                        <div class="p-mid-grid">
+                            <div class="p-mid-box"></div>
+                            <div class="p-mid-box"></div>
+                        </div>
+                    </div>
+                    <div class="parallax-layer p-fg">
+                        <div class="p-fg-monogram">PB</div>
+                        <div class="p-fg-line"></div>
+                        <div class="p-fg-title">CINEMATIC FRAME #304</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- V4: DRONE & FPV VIDEOGRAPHY -->
+    <section id="v4-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.04 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">Drone & FPV Videography</h2>
+                <p class="section-desc">
+                    Spectacular high-speed aerial tracking and smooth architectural scanning. Drone flight paths mapped
+                    dynamically across landscapes to portray massive developmental boundaries.
+                </p>
+                <ul class="section-features">
+                    <li>FPV Close-Range Maneuvers</li>
+                    <li>4K Cinematic Stabilization</li>
+                    <li>Orthomosaic Layout Tracking</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(4, 'Drone & FPV Videography')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="drone-container">
+                    <div class="drone-overlay"></div>
+                    <svg class="drone-svg" viewBox="0 0 400 250">
+                        <path id="drone-path" class="drone-flight-path" d="M 50,200 Q 150,50 220,160 T 350,80" />
+                        <circle id="drone-node" class="drone-blip" r="6" cx="50" cy="200" />
+                    </svg>
+                    <div class="drone-hud">
+                        <div class="drone-hud-top">
+                            <div>MODE: GPS_STABLE // 12 SAT</div>
+                            <div class="drone-hud-rec">
+                                <div class="drone-hud-rec-dot"></div>
+                                <span>REC [4K 60FPS]</span>
+                            </div>
+                        </div>
+                        <div class="drone-hud-crosshair"></div>
+                        <div class="drone-hud-bottom">
+                            <div>ALT: <span id="hud-alt">182</span> FT</div>
+                            <div>SPD: 34.2 MPH</div>
+                            <div>SYS.TEMP: 32°C</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- V5: MASTER TOWNSHIP PLANNING -->
+    <section id="v5-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.05 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">Master Township Planning</h2>
+                <p class="section-desc">
+                    Massive vector-based holographic maps displaying zoning boundaries, amenities, road linkages, and
+                    phase availability across entire developments.
+                </p>
+                <ul class="section-features">
+                    <li>Phase Boundary Allocation</li>
+                    <li>Topological Vector Maps</li>
+                    <li>Interactive Zoning Indicators</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(5, 'Master Township Planning')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="township-container" id="township-master">
+                    <div class="township-grid"></div>
+                    <svg class="township-map" viewBox="0 0 300 200">
+                        <!-- Sector A -->
+                        <polygon class="township-sector" points="20,20 120,20 110,80 30,70"
+                            data-sector="Sector A: Residential" data-desc="84 Luxury Villas, Fully Booked." />
+                        <!-- Sector B -->
+                        <polygon class="township-sector" points="120,20 280,20 270,90 110,80"
+                            data-sector="Sector B: Commercial Core"
+                            data-desc="Shopping district and high-rise commercial layouts." />
+                        <!-- Sector C -->
+                        <polygon class="township-sector" points="30,70 110,80 120,180 20,180"
+                            data-sector="Sector C: Eco Canopy"
+                            data-desc="Central landscape garden and natural lake park system." />
+                        <!-- Sector D -->
+                        <polygon class="township-sector" points="110,80 270,90 280,180 120,180"
+                            data-sector="Sector D: Tech & Innovation"
+                            data-desc="Phase 3 layout planned for IT parks and co-working." />
+                    </svg>
+                    <div class="township-hud">
+                        <div class="township-hud-lbl">Township Zoning Detail</div>
+                        <div class="township-hud-val" id="township-title">Hover over sectors</div>
+                        <div class="township-hud-lbl" id="township-desc">Hover over the map layout to analyze structural
+                            planning zones.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- V6: VIDEO EDITING & REELS PRODUCTION -->
+    <section id="v6-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">V.06 // CREATIVE VISUALS</div>
+                <h2 class="section-heading">Video Editing & Reels</h2>
+                <p class="section-desc">
+                    Fast-cuts, color grading, sound-design curation, and modern cinematic styling optimized for reels,
+                    teasers, and presentation kits.
+                </p>
+                <ul class="section-features">
+                    <li>Kinetic Typography Cuts</li>
+                    <li>LUTS & Color Grading</li>
+                    <li>Audio Waveform Synchronization</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(6, 'Video Editing & Reels')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="editor-container" id="video-editor">
+                    <div class="editor-monitor">
+                        <div class="editor-video-source" id="editor-screen"></div>
+                        <div class="editor-hud">PLAY 00:00:14:02</div>
+                    </div>
+                    <div class="editor-controls">
+                        <div class="editor-tracks">
+                            <div class="editor-playhead" id="editor-playhead"></div>
+                            <div class="editor-track">
+                                <div class="editor-clip" style="left: 10%; width: 40%;">CLIP_A.mp4</div>
+                                <div class="editor-clip" style="left: 55%; width: 35%;">CLIP_B.mp4</div>
+                            </div>
+                            <div class="editor-track">
+                                <div class="editor-clip audio" style="left: 10%; width: 80%;">AUDIO_THEME.wav</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CATEGORY 2: DIGITAL & TECH INTEGRATIONS (D1 - D5) ── -->
+
+    <!-- D1: INTERACTIVE AVAILABILITY TOOLS -->
+    <section id="d1-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">D.01 // TECH INTEGRATION</div>
+                <h2 class="section-heading">Interactive Availability Tools</h2>
+                <p class="section-desc">
+                    Bespoke web dashboard maps integrated into property sites. Real-time plot filters, sold/available
+                    matrices, and unit reservation tracking panels.
+                </p>
+                <ul class="section-features">
+                    <li>Dynamic SVG Layout Mapping</li>
+                    <li>Custom CRM Sync Pipelines</li>
+                    <li>Responsive Glass Interface</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(7, 'Interactive Availability Tools')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="dash-container" id="plot-dashboard">
+                    <div class="dash-header">
+                        <div class="dash-title">Villa Complex Dashboard</div>
+                        <div class="dash-legend">
+                            <div class="legend-item">
+                                <div class="legend-dot available"></div><span>Free</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot reserved"></div><span>Hold</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-dot sold"></div><span>Sold</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dash-grid">
+                        <div class="dash-plot available" data-plot="VILLA 101" data-area="4,200 SQFT"
+                            data-price="$1.2M">
+                            <span class="dash-plot-num">P.101</span>
+                            <span class="dash-plot-area">4.2k</span>
+                            <span class="dash-plot-status">Available</span>
+                        </div>
+                        <div class="dash-plot sold" data-plot="VILLA 102" data-area="5,100 SQFT" data-price="SOLD">
+                            <span class="dash-plot-num">P.102</span>
+                            <span class="dash-plot-area">5.1k</span>
+                            <span class="dash-plot-status">Sold</span>
+                        </div>
+                        <div class="dash-plot available" data-plot="VILLA 103" data-area="3,800 SQFT"
+                            data-price="$950K">
+                            <span class="dash-plot-num">P.103</span>
+                            <span class="dash-plot-area">3.8k</span>
+                            <span class="dash-plot-status">Available</span>
+                        </div>
+                        <div class="dash-plot reserved" data-plot="VILLA 104" data-area="6,200 SQFT" data-price="$2.1M">
+                            <span class="dash-plot-num">P.104</span>
+                            <span class="dash-plot-area">6.2k</span>
+                            <span class="dash-plot-status">Hold</span>
+                        </div>
+                        <div class="dash-plot sold" data-plot="VILLA 105" data-area="4,000 SQFT" data-price="SOLD">
+                            <span class="dash-plot-num">P.105</span>
+                            <span class="dash-plot-area">4.0k</span>
+                            <span class="dash-plot-status">Sold</span>
+                        </div>
+                        <div class="dash-plot available" data-plot="VILLA 106" data-area="4,800 SQFT"
+                            data-price="$1.5M">
+                            <span class="dash-plot-num">P.106</span>
+                            <span class="dash-plot-area">4.8k</span>
+                            <span class="dash-plot-status">Available</span>
+                        </div>
+                        <div class="dash-plot available" data-plot="VILLA 107" data-area="5,400 SQFT"
+                            data-price="$1.8M">
+                            <span class="dash-plot-num">P.107</span>
+                            <span class="dash-plot-area">5.4k</span>
+                            <span class="dash-plot-status">Available</span>
+                        </div>
+                        <div class="dash-plot sold" data-plot="VILLA 108" data-area="7,000 SQFT" data-price="SOLD">
+                            <span class="dash-plot-num">P.108</span>
+                            <span class="dash-plot-area">7.0k</span>
+                            <span class="dash-plot-status">Sold</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- D2: VR EXPERIENCE CENTERS -->
+    <section id="d2-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">D.02 // TECH INTEGRATION</div>
+                <h2 class="section-heading">VR Experience Centers</h2>
+                <p class="section-desc">
+                    Virtual Reality viewport rigs and panoramic layout simulations. We build interactive setups allowing
+                    clients to scan interior environments in full 360-degree rotation.
+                </p>
+                <ul class="section-features">
+                    <li>360 Panoramic Projection</li>
+                    <li>Hotspot Interaction Anchors</li>
+                    <li>Wide Lens Projection Warp</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(8, 'VR Experience Centers')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="vr-container" id="vr-viewer">
+                    <div class="vr-lens-frame">
+                        <div class="vr-panoramic" id="vr-pano"></div>
+                        <div class="vr-hotspot" style="margin-left: -50px; margin-top: -30px;">
+                            <div class="vr-hotspot-ring"></div>
+                            <div class="vr-hotspot-dot"></div>
+                        </div>
+                        <div class="vr-hotspot" style="margin-left: 60px; margin-top: 20px;">
+                            <div class="vr-hotspot-ring"></div>
+                            <div class="vr-hotspot-dot"></div>
+                        </div>
+                        <div class="vr-hud-arc"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- D3: CUSTOM MOBILE APP SOLUTIONS -->
+    <section id="d3-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">D.03 // TECH INTEGRATION</div>
+                <h2 class="section-heading">Custom Mobile Solutions</h2>
+                <p class="section-desc">
+                    Fully-branded mobile application mockups designed to catalog real estate portfolio properties.
+                    High-fidelity layouts and smooth transitions that act like native code.
+                </p>
+                <ul class="section-features">
+                    <li>3D Tilted Perspective Frame</li>
+                    <li>Smooth Scroll Listing Feeds</li>
+                    <li>Haptic Mimic Design Cards</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(9, 'Custom Mobile Solutions')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="app-container" id="app-perspective-box">
+                    <div class="phone-mockup" id="phone-mock">
+                        <div class="phone-screen">
+                            <div class="phone-header">
+                                <span class="phone-logo">PB MOBILE</span>
+                                <span>14:02 PM</span>
+                            </div>
+                            <div class="phone-list">
+                                <div class="phone-card">
+                                    <div class="phone-card-img"
+                                        style="background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');">
+                                    </div>
+                                    <div class="phone-card-info">
+                                        <div class="phone-card-title">Helix Ridge Villa</div>
+                                        <div class="phone-card-price">$4,500,000</div>
+                                    </div>
+                                </div>
+                                <div class="phone-card">
+                                    <div class="phone-card-img"
+                                        style="background-image: url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80');">
+                                    </div>
+                                    <div class="phone-card-info">
+                                        <div class="phone-card-title">Skyline Penthouse</div>
+                                        <div class="phone-card-price">$2,100,000</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="phone-navbar">
+                                <div class="phone-nav-icon active"></div>
+                                <div class="phone-nav-icon"></div>
+                                <div class="phone-nav-icon"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- D4: PREMIUM BROCHURE & GRAPHIC DESIGN -->
+    <section id="d4-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">D.04 // TECH INTEGRATION</div>
+                <h2 class="section-heading">Brochure & Graphic Design</h2>
+                <p class="section-desc">
+                    Immersive layouts, vector branding books, and premium digital catalog materials. Crafted to display
+                    structural excellence on paper and retina screens.
+                </p>
+                <ul class="section-features">
+                    <li>3D Page Flipping Spreads</li>
+                    <li>Modern Typography Systems</li>
+                    <li>Curated Architectural Palettes</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(10, 'Brochure & Graphic Design')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="catalog-container">
+                    <div class="book-spread">
+                        <div class="book-page-half book-page-left">
+                            <div class="book-logo">PB BRANDS</div>
+                            <div class="book-content">
+                                <h3 class="book-title">Luxurious Minimalist Aesthetics</h3>
+                                <p style="font-size: 8px; color: var(--muted);">We combine bold display typography with
+                                    raw spacing to reflect architectural structural balance.</p>
+                            </div>
+                            <div class="book-footer">
+                                <span>PAGE 08</span>
+                                <span>VOL 01</span>
+                            </div>
+                        </div>
+                        <div class="book-page-half book-page-right" id="brochure-page">
+                            <div class="book-logo">DESIGN SPEC</div>
+                            <div class="book-content">
+                                <div class="book-visual"></div>
+                                <p style="font-size: 8px; color: var(--muted); line-height: 1.5;">Materials: Steel,
+                                    Glass, Brutalist Concrete, Liquid Platinum details.</p>
+                            </div>
+                            <div class="book-footer">
+                                <span>PAGE 09</span>
+                                <span>© prizmaBrixx</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- D5: LEAD GEN FUNNEL & SMART CRM INTEGRATION -->
+    <section id="d5-section" class="section-container">
+        <div class="section-grid">
+            <div class="section-info">
+                <div class="section-index">D.05 // TECH INTEGRATION</div>
+                <h2 class="section-heading">Lead Gen & Smart CRM</h2>
+                <p class="section-desc">
+                    Custom marketing pipelines feeding real estate inquiries straight into automated CRMs. Dynamic
+                    dashboards visualizing user conversions, clicks, and metrics in real-time.
+                </p>
+                <ul class="section-features">
+                    <li>CRM Pipeline Automation</li>
+                    <li>Live Lead Feed Tracking</li>
+                    <li>Real-time Data Visualization</li>
+                </ul>
+                <button class="section-cta" onclick="openPortfolioModal(11, 'Lead Gen & Smart CRM')">
+                    <span>View Our Projects</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+            <div class="section-visual">
+                <div class="crm-container">
+                    <div class="crm-header">
+                        <div class="crm-title">AI Conversion HUD</div>
+                        <div class="crm-badge">LIVE AUTO_SYNC</div>
+                    </div>
+                    <div class="crm-stats">
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-lbl">Conversions</div>
+                            <div class="crm-stat-val" id="val-conv">824</div>
+                        </div>
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-lbl">CTR Index</div>
+                            <div class="crm-stat-val" id="val-ctr">4.8%</div>
+                        </div>
+                        <div class="crm-stat-card">
+                            <div class="crm-stat-lbl">Active Inquiries</div>
+                            <div class="crm-stat-val" id="val-inq">129</div>
+                        </div>
+                    </div>
+                    <div class="crm-chart-box">
+                        <svg class="crm-chart-svg" viewBox="0 0 300 80">
+                            <defs>
+                                <linearGradient id="crm-gradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="var(--cyan)" />
+                                    <stop offset="100%" stop-color="transparent" />
+                                </linearGradient>
+                            </defs>
+                            <path class="crm-chart-line"
+                                d="M 0,60 L 50,45 L 100,55 L 150,30 L 200,48 L 250,20 L 300,10" />
+                            <path class="crm-chart-fill"
+                                d="M 0,60 L 50,45 L 100,55 L 150,30 L 200,48 L 250,20 L 300,10 L 300,80 L 0,80 Z" />
+                        </svg>
+                    </div>
+                    <div class="crm-leads-list">
+                        <div class="crm-lead-item">
+                            <span class="crm-lead-name">Alexander R. (Villa 104)</span>
+                            <span class="crm-lead-time">1 min ago</span>
+                            <span class="crm-lead-status">INQUIRY</span>
+                        </div>
+                        <div class="crm-lead-item">
+                            <span class="crm-lead-name">Sophie L. (Penthouse A)</span>
+                            <span class="crm-lead-time">5 mins ago</span>
+                            <span class="crm-lead-status">BROCHURE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FOOTER & CLOSING EXPERIENCE ── -->
+    <footer id="footer-section" class="footer-section">
+        <div class="footer-glow"></div>
+        <h2 class="footer-heading">Ready to build the future of real estate?</h2>
+        <div class="footer-cta-container">
+            <div class="magnetic-btn-wrap" id="magnetic-wrap">
+                <button class="magnetic-btn" onclick="alert('Launching Project Pipeline...')">
+                    Get In Touch
+                </button>
+            </div>
+        </div>
+        <div class="footer-bottom-grid">
+            <div class="footer-col">
+                <div class="footer-col-title">OFFICE COORDINATES</div>
+                <div class="footer-col-content">
+                    prizmaBrixx Labs<br>
+                    Level 84, Platinum Tower<br>
+                    Mumbai, MH // Bangalore, KA
+                </div>
+            </div>
+            <div class="footer-col">
+                <div class="footer-col-title">GLOBAL INQUIRIES</div>
+                <div class="footer-col-content">
+                    hello@prizmabrixx.com<br>
+                    +91 98860 00000
+                </div>
+            </div>
+            <div class="footer-col">
+                <div class="footer-col-title">THE PILOT PILLARS</div>
+                <div class="footer-col-content">
+                    2D/3D Viz. Architectural CAD. Drone Flypaths. Holographic Zoning systems. Integrated Real Estate CRM
+                    funnels.
+                </div>
+            </div>
+            <div class="footer-col">
+                <div class="footer-col-title">CONNECT</div>
+                <div class="footer-socials">
+                    <a href="#" class="footer-social-link">Instagram</a>
+                    <a href="#" class="footer-social-link">LinkedIn</a>
+                    <a href="#" class="footer-social-link">Behance</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ── SYSTEM SCRIPTS ── -->
+    <script>
+        // ── INITIALIZE GSAP SCROLLTRIGGER ──
+        gsap.registerPlugin(ScrollTrigger);
+
+        // ── LENIS SMOOTH SCROLL INITIALIZATION ──
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smooth: true,
+            mouseMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Connect GSAP ScrollTrigger to Lenis scroll updates
+        lenis.on('scroll', ScrollTrigger.update);
+        ScrollTrigger.scrollerProxy(document.body, {
+            scrollTop(value) {
+                return arguments.length ? lenis.scrollTo(value, { immediate: true }) : lenis.scroll;
+            },
+            getBoundingClientRect() {
+                return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+            }
+        });
+
+        // ── CUSTOM CURSOR CODE ──
+        const cursor = document.getElementById('custom-cursor');
+        const cursorDot = document.getElementById('custom-cursor-dot');
+
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            gsap.to(cursorDot, { x: e.clientX, y: e.clientY, duration: 0.02 });
+        });
+
+        document.querySelectorAll('a, button, .dash-plot, .township-sector').forEach(element => {
+            element.addEventListener('mouseenter', () => {
+                cursor.style.width = '48px';
+                cursor.style.height = '48px';
+                cursor.style.borderColor = 'var(--white)';
+                cursor.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            });
+            element.addEventListener('mouseleave', () => {
+                cursor.style.width = '24px';
+                cursor.style.height = '24px';
+                cursor.style.borderColor = 'var(--gold)';
+                cursor.style.backgroundColor = 'transparent';
+            });
+        });
+
+        // ── PRELOADER DRIFTING PARTICLES CANVAS ──
+        const loaderCanvas = document.getElementById('preloader-canvas');
+        const loaderCtx = loaderCanvas.getContext('2d');
+        let loaderParticles = [];
+
+        function resizeLoaderCanvas() {
+            loaderCanvas.width = window.innerWidth;
+            loaderCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeLoaderCanvas);
+        resizeLoaderCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * loaderCanvas.width;
+                this.y = Math.random() * loaderCanvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.4 - 0.2;
+                this.speedY = Math.random() * 0.4 - 0.2;
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > loaderCanvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > loaderCanvas.height) this.speedY *= -1;
+            }
+            draw() {
+                loaderCtx.save();
+                loaderCtx.globalAlpha = this.alpha;
+                loaderCtx.fillStyle = '#d4af37';
+                loaderCtx.beginPath();
+                loaderCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                loaderCtx.fill();
+                loaderCtx.restore();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) {
+            loaderParticles.push(new Particle());
+        }
+
+        function animateLoaderParticles() {
+            loaderCtx.clearRect(0, 0, loaderCanvas.width, loaderCanvas.height);
+            loaderParticles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateLoaderParticles);
+        }
+        animateLoaderParticles();
+
+        // Preloader Reveal Timeline
+        const preloaderTL = gsap.timeline({
+            onComplete: () => {
+                // Fade and remove preloader
+                gsap.to('#preloader', {
+                    opacity: 0,
+                    duration: 1,
+                    ease: 'power3.inOut',
+                    onComplete: () => {
+                        document.getElementById('preloader').style.display = 'none';
+                        // Trigger Hero Entry Animations
+                        triggerHeroReveal();
+                    }
+                });
+            }
+        });
+
+        // Preloader counting code
+        let percentageCount = { val: 0 };
+        preloaderTL.to(percentageCount, {
+            val: 100,
+            duration: 3,
+            ease: 'power2.inOut',
+            onUpdate: () => {
+                document.querySelector('.preloader-counter').innerText = Math.floor(percentageCount.val) + '%';
+                document.querySelector('.preloader-progress-fill').style.width = percentageCount.val + '%';
+            }
+        });
+
+        // Setup logo and tags reveal in parallel
+        gsap.to('.preloader-logo-img', { opacity: 1, filter: 'blur(0px)', scale: 1, duration: 1.8, delay: 0.2 });
+        gsap.to('.preloader-tagline', { opacity: 1, y: 0, duration: 1.2, delay: 0.8 });
+        gsap.to('.preloader-counter', { opacity: 1, duration: 0.8, delay: 0.6 });
+
+        // ── HERO ORBITAL CONSTELLATION CANVAS ──
+        const heroCanvas = document.getElementById('hero-canvas');
+        const heroCtx = heroCanvas.getContext('2d');
+        let heroPoints = [];
+
+        function resizeHeroCanvas() {
+            heroCanvas.width = window.innerWidth;
+            heroCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeHeroCanvas);
+        resizeHeroCanvas();
+
+        class OrbitNode {
+            constructor(angle, radius, speed, size) {
+                this.angle = angle;
+                this.radius = radius;
+                this.speed = speed;
+                this.size = size;
+                this.x = 0;
+                this.y = 0;
+            }
+            update() {
+                this.angle += this.speed;
+                // Isometric/tilted circle calculations
+                const centerX = heroCanvas.width / 2;
+                const centerY = heroCanvas.height / 2;
+                this.x = centerX + Math.cos(this.angle) * this.radius;
+                this.y = centerY + Math.sin(this.angle) * (this.radius * 0.45); // flatten y to create isometric ellipse
+            }
+            draw() {
+                heroCtx.beginPath();
+                heroCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                heroCtx.fillStyle = 'rgba(212, 175, 55, 0.4)';
+                heroCtx.fill();
+            }
+        }
+
+        // Generate concentric orbital rings
+        for (let r = 100; r < 500; r += 80) {
+            const count = Math.floor(r / 15);
+            const speed = (600 - r) * 0.00002;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                heroPoints.push(new OrbitNode(angle, r, speed, Math.random() * 1.5 + 0.5));
+            }
+        }
+
+        function animateHeroConstellation() {
+            heroCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+
+            // Draw background glow grid lines intersecting at center
+            heroCtx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
+            heroCtx.lineWidth = 1;
+            const cx = heroCanvas.width / 2;
+            const cy = heroCanvas.height / 2;
+
+            heroCtx.beginPath();
+            heroCtx.arc(cx, cy, 320, 0, Math.PI * 2);
+            heroCtx.stroke();
+
+            // Draw particles and faint connect lines
+            heroPoints.forEach(node => {
+                node.update();
+                node.draw();
+            });
+
+            // Connect neighboring nodes inside the rings occasionally
+            heroCtx.strokeStyle = 'rgba(212, 175, 55, 0.04)';
+            heroCtx.lineWidth = 0.5;
+            heroCtx.beginPath();
+            for (let i = 0; i < heroPoints.length; i += 4) {
+                if (i + 1 < heroPoints.length) {
+                    heroCtx.moveTo(heroPoints[i].x, heroPoints[i].y);
+                    heroCtx.lineTo(heroPoints[i + 1].x, heroPoints[i + 1].y);
+                }
+            }
+            heroCtx.stroke();
+
+            requestAnimationFrame(animateHeroConstellation);
+        }
+        animateHeroConstellation();
+
+        // ── HERO ENTRY SEQUENCE ──
+        function triggerHeroReveal() {
+            const tl = gsap.timeline();
+            tl.to('.hero-eyebrow', { opacity: 1, y: 0, duration: 1.2, ease: 'power4.out' })
+                .to('.hero-title', { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, ease: 'power4.out' }, '-=0.9')
+                .to('.hero-subtitle', { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }, '-=1.0')
+                .from('.navbar', { y: -100, opacity: 0, duration: 1.2, ease: 'power4.out' }, '-=1.2');
+        }
+
+        // ── MACBOOK-STYLE GENIE MINIMIZE SCROLL TRIGGER ──
+        gsap.to('.hero-content', {
+            scrollTrigger: {
+                trigger: '#hero-section',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true,
+                pin: true,
+                pinSpacing: false,
+            },
+            scale: 0.12,
+            yPercent: -100, // Squeezes and pulls upwards towards the navbar logo
+            opacity: 0,
+            filter: 'blur(15px)',
+            transformOrigin: '50% 0%',
+            ease: 'power2.inOut'
+        });
+
+        gsap.to('#hero-canvas', {
+            scrollTrigger: {
+                trigger: '#hero-section',
+                start: 'top top',
+                end: '80% top',
+                scrub: true,
+            },
+            opacity: 0,
+            ease: 'power1.inOut'
+        });
+
+        gsap.to('.hero-scroll-indicator', {
+            scrollTrigger: {
+                trigger: '#hero-section',
+                start: 'top top',
+                end: '20% top',
+                scrub: true,
+            },
+            opacity: 0,
+            y: 30,
+            pointerEvents: 'none'
+        });
+
+        // Navbar Scroll Shrink effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // ── SCROLL ANIMATIONS (GSAP SCROLLTRIGGER) ──
+
+        // General Fade in for sections
+        const sections = document.querySelectorAll('.section-container:not(#hero-section)');
+        sections.forEach(sec => {
+            const heading = sec.querySelector('.section-heading');
+            const desc = sec.querySelector('.section-desc');
+            const features = sec.querySelectorAll('.section-features li');
+            const visual = sec.querySelector('.section-visual');
+            const idx = sec.querySelector('.section-index');
+
+            const sectionTL = gsap.timeline({
+                scrollTrigger: {
+                    trigger: sec,
+                    start: 'top 75%',
+                    end: 'bottom 20%',
+                    toggleActions: 'play none none reverse'
+                }
+            });
+
+            if (idx) sectionTL.from(idx, { opacity: 0, y: 15, duration: 0.6 });
+            if (heading) sectionTL.from(heading, { opacity: 0, y: 25, duration: 0.8 }, '-=0.4');
+            if (desc) sectionTL.from(desc, { opacity: 0, y: 20, duration: 0.8 }, '-=0.6');
+            if (features.length) sectionTL.from(features, { opacity: 0, y: 10, stagger: 0.1, duration: 0.6 }, '-=0.6');
+            if (visual) sectionTL.from(visual, { opacity: 0, scale: 0.95, duration: 1, ease: 'power3.out' }, '-=0.8');
+        });
+
+        // ── INTERACTIVE MODULE V1: 2D ARCHITECTURAL DRAWINGS (SVG Draw) ──
+        gsap.set('.blueprint-svg path', { strokeDasharray: 1000, strokeDashoffset: 1000 });
+        gsap.to('.blueprint-svg path', {
+            strokeDashoffset: 0,
+            duration: 2.5,
+            ease: 'power2.out',
+            scrollTrigger: {
+                trigger: '#v1-section',
+                start: 'top 60%',
+            }
+        });
+
+        // ── INTERACTIVE MODULE V2: 3D ULTRA-REALISTIC RENDERS (Swipe Slider) ──
+        const sliderContainer = document.getElementById('day-night-slider');
+        const sliderNightImg = sliderContainer.querySelector('.slider-img.night');
+        const sliderDivider = sliderContainer.querySelector('.slider-divider');
+        const sliderHandle = sliderContainer.querySelector('.slider-handle');
+
+        function moveSlider(clientX) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const posX = clientX - rect.left;
+            let percent = (posX / rect.width) * 100;
+            if (percent < 0) percent = 0;
+            if (percent > 100) percent = 100;
+
+            sliderNightImg.style.clipPath = `inset(0 0 0 ${percent}%)`;
+            sliderDivider.style.left = `${percent}%`;
+            sliderHandle.style.left = `${percent}%`;
+        }
+
+        sliderContainer.addEventListener('mousemove', (e) => {
+            moveSlider(e.clientX);
+        });
+
+        sliderContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                moveSlider(e.touches[0].clientX);
+            }
+        });
+
+        // ── INTERACTIVE MODULE V3: WALKTHROUGH ANIMATIONS (Parallax Depth) ──
+        gsap.to('#walkthrough-parallax .p-bg', {
+            yPercent: -15,
+            scale: 1.15,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '#v3-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+            }
+        });
+        gsap.to('#walkthrough-parallax .p-mid', {
+            yPercent: 12,
+            rotation: 1,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '#v3-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+            }
+        });
+        gsap.to('#walkthrough-parallax .p-fg', {
+            yPercent: -8,
+            rotation: -1,
+            scale: 1.05,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '#v3-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+            }
+        });
+
+        // ── INTERACTIVE MODULE V4: DRONE & FPV VIDEOGRAPHY (Flight Path Draw) ──
+        const dronePath = document.getElementById('drone-path');
+        const droneNode = document.getElementById('drone-node');
+        const pathLength = dronePath.getTotalLength();
+
+        gsap.set(dronePath, { strokeDasharray: pathLength, strokeDashoffset: pathLength });
+
+        const droneTL = gsap.timeline({
+            scrollTrigger: {
+                trigger: '#v4-section',
+                start: 'top 50%',
+                end: 'bottom 20%',
+                scrub: 1,
+            }
+        });
+
+        droneTL.to(dronePath, { strokeDashoffset: 0, ease: 'none' })
+            .to(droneNode, {
+                motionPath: {
+                    path: '#drone-path',
+                    align: '#drone-path',
+                    alignOrigin: [0.5, 0.5]
+                },
+                ease: 'none'
+            }, 0);
+
+        // Telemetry altimeter tick
+        let altMeter = { val: 180 };
+        gsap.to(altMeter, {
+            val: 310,
+            scrollTrigger: {
+                trigger: '#v4-section',
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true
+            },
+            onUpdate: () => {
+                document.getElementById('hud-alt').innerText = Math.floor(altMeter.val);
+            }
+        });
+
+        // Helper registration for GSAP motion path if motionPath plugin isn't loaded:
+        // Since motionPath is a separate plugin, let's manually animate the node along the path in updates to avoid CDN failures
+        let droneProgress = { val: 0 };
+        gsap.to(droneProgress, {
+            val: 1,
+            scrollTrigger: {
+                trigger: '#v4-section',
+                start: 'top 50%',
+                end: 'bottom 30%',
+                scrub: 1
+            },
+            onUpdate: () => {
+                const point = dronePath.getPointAtLength(droneProgress.val * pathLength);
+                droneNode.setAttribute('cx', point.x);
+                droneNode.setAttribute('cy', point.y);
+            }
+        });
+
+        // ── INTERACTIVE MODULE V5: MASTER PLAN TOWNSHIP (Interactive Zoning Map) ──
+        const sectors = document.querySelectorAll('.township-sector');
+        const zoningTitle = document.getElementById('township-title');
+        const zoningDesc = document.getElementById('township-desc');
+
+        sectors.forEach(sec => {
+            sec.addEventListener('mouseenter', () => {
+                // Clear previous active states
+                sectors.forEach(s => s.classList.remove('active'));
+                sec.classList.add('active');
+
+                // Update HUD
+                const label = sec.getAttribute('data-sector');
+                const desc = sec.getAttribute('data-desc');
+                zoningTitle.innerText = label;
+                zoningDesc.innerText = desc;
+
+                // GSAP text animation
+                gsap.fromTo('#township-title', { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.3 });
+                gsap.fromTo('#township-desc', { opacity: 0 }, { opacity: 1, duration: 0.4 });
+            });
+
+            sec.addEventListener('mouseleave', () => {
+                sec.classList.remove('active');
+            });
+        });
+
+        // ── INTERACTIVE MODULE V6: VIDEO EDITING Timeline Sweeper ──
+        const editorPlayhead = document.getElementById('editor-playhead');
+        const editorScreen = document.getElementById('editor-screen');
+
+        gsap.to(editorPlayhead, {
+            left: '90%',
+            repeat: -1,
+            duration: 4,
+            ease: 'linear',
+            yoyo: true,
+            onUpdate: function () {
+                // Parse playhead progress to apply video preview monitor adjustments
+                const progress = parseFloat(editorPlayhead.style.left) || 0;
+                if (progress < 30) {
+                    editorScreen.style.filter = 'hue-rotate(0deg) contrast(1)';
+                } else if (progress >= 30 && progress < 65) {
+                    editorScreen.style.filter = 'hue-rotate(90deg) contrast(1.15)';
+                } else {
+                    editorScreen.style.filter = 'hue-rotate(-45deg) grayscale(0.5)';
+                }
+            }
+        });
+
+        // ── INTERACTIVE MODULE D1: AVAILABILITY PLOT MAP ──
+        const plots = document.querySelectorAll('.dash-plot');
+        plots.forEach(plot => {
+            plot.addEventListener('click', () => {
+                const num = plot.getAttribute('data-plot');
+                const area = plot.getAttribute('data-area');
+                const price = plot.getAttribute('data-price');
+
+                // Show floating detailed dialog
+                alert(`UNIT ENQUIRY:\nUnit: ${num}\nSize: ${area}\nStatus Pricing: ${price}\n\nOur portfolio system has synced this unit status directly to the active CRM catalog pipeline.`);
+            });
+        });
+
+        // ── INTERACTIVE MODULE D2: VR VIEWPORT PANNING ──
+        const vrLens = document.getElementById('vr-viewer');
+        const vrPano = document.getElementById('vr-pano');
+
+        vrLens.addEventListener('mousemove', (e) => {
+            const rect = vrLens.getBoundingClientRect();
+            const posX = e.clientX - rect.left;
+            const percentX = (posX / rect.width);
+
+            // Map percentage to horizontal panning offset (-260px is start, pan total 250px)
+            const mapX = -450 + (percentX * 380);
+            gsap.to(vrPano, { left: mapX, duration: 0.4 });
+        });
+
+        // ── INTERACTIVE MODULE D3: 3D PHONE TILT ──
+        const appPerspectiveBox = document.getElementById('app-perspective-box');
+        const phoneMock = document.getElementById('phone-mock');
+
+        appPerspectiveBox.addEventListener('mousemove', (e) => {
+            const rect = appPerspectiveBox.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Math for tilting angles (-20 to 20 range)
+            const tiltX = ((y / rect.height) - 0.5) * -30;
+            const tiltY = ((x / rect.width) - 0.5) * 30;
+
+            gsap.to(phoneMock, {
+                transform: `rotateX(${20 + tiltX}deg) rotateY(${-20 + tiltY}deg) rotateZ(5deg)`,
+                duration: 0.3
+            });
+        });
+
+        appPerspectiveBox.addEventListener('mouseleave', () => {
+            gsap.to(phoneMock, {
+                transform: `rotateX(20deg) rotateY(-20deg) rotateZ(5deg)`,
+                duration: 0.6
+            });
+        });
+
+        // ── INTERACTIVE MODULE D5: SMART CRM & METRICS TICKER ──
+        // Regularly shuffle metric details to replicate live integration
+        setInterval(() => {
+            const conv = document.getElementById('val-conv');
+            const inq = document.getElementById('val-inq');
+
+            const prevConv = parseInt(conv.innerText);
+            const prevInq = parseInt(inq.innerText);
+
+            if (Math.random() > 0.5) {
+                conv.innerText = prevConv + 1;
+                gsap.fromTo(conv, { scale: 1.2, color: 'var(--cyan)' }, { scale: 1, color: 'var(--gold)', duration: 0.4 });
+            } else {
+                inq.innerText = prevInq + 1;
+                gsap.fromTo(inq, { scale: 1.2, color: 'var(--cyan)' }, { scale: 1, color: 'var(--gold)', duration: 0.4 });
+            }
+        }, 3000);
+
+        // ── FOOTER MAGNETIC CTA ──
+        const magneticWrap = document.getElementById('magnetic-wrap');
+        const magneticBtn = magneticWrap.querySelector('.magnetic-btn');
+
+        magneticWrap.addEventListener('mousemove', (e) => {
+            const rect = magneticWrap.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+
+            // Push CTA slightly towards mouse coord (magnetic effect)
+            gsap.to(magneticBtn, { x: x * 0.4, y: y * 0.4, duration: 0.2 });
+        });
+
+        magneticWrap.addEventListener('mouseleave', () => {
+            gsap.to(magneticBtn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.3)' });
+        });
+
+        // ── PORTFOLIO OVERLAY MODAL LOGIC ──
+        const PORTFOLIO_DATABASE = {
+            1: [
+                {
+                    title: "Brutalist Villa Structure Plans",
+                    location: "Gachibowli, Hyderabad",
+                    desc: "Precision architectural vector layouts detailing spacing, thickness parameters, and layered blueprint lines ready for high-fidelity modeling.",
+                    metrics: [
+                        { value: "0.02mm", label: "Precision" },
+                        { value: "3 Layers", label: "Vector Details" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Commercial Facade Grid Layout",
+                    location: "HITEC City, Hyderabad",
+                    desc: "Structural elevation sketches and dimensional grids outlining facade curtain walls for 42-story office towers.",
+                    metrics: [
+                        { value: "CAD DXF", label: "Formats" },
+                        { value: "1:100", label: "Plot Scale" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            2: [
+                {
+                    title: "Infinity Edge Pool Renders",
+                    location: "Shamshabad, Hyderabad",
+                    desc: "Photorealistic rendering of infinity edge luxury pool side vistas using advanced material shading and forest foliage modeling.",
+                    metrics: [
+                        { value: "8K UHD", label: "Resolution" },
+                        { value: "Path-Traced", label: "Lighting Mode" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Downtown Penthouse Exteriors",
+                    location: "Kokapet, Hyderabad",
+                    desc: "Stunning dusk lighting studies and facade elevations mapping reflecting glass features and brutalist architectural concrete.",
+                    metrics: [
+                        { value: "8 Angles", label: "View Options" },
+                        { value: "Dusk Mood", label: "Time Simulation" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            3: [
+                {
+                    title: "Helix Grand Lobby Fly-Through",
+                    location: "Madhapur, Hyderabad",
+                    desc: "Cinematic digital walkthrough tracking double-height travertine corridors, concealed gold cove lights, and premium marble lobbies.",
+                    metrics: [
+                        { value: "60 FPS", label: "Frame Rate" },
+                        { value: "Cinematic", label: "Motion Profile" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Executive Penthouse Interior Walk",
+                    location: "Jubilee Hills, Hyderabad",
+                    desc: "Immersive interior walkthrough showcasing custom brushed gold fittings, smart glass partitions, and luxury open kitchen layouts.",
+                    metrics: [
+                        { value: "Path-Follow", label: "Camera Control" },
+                        { value: "Real-Time", label: "Depth Feel" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            4: [
+                {
+                    title: "Meadow Township FPV Survey",
+                    location: "Mokila, Hyderabad",
+                    desc: "High-speed close-range drone sweeps highlighting local approach roads, structural boundaries, and estate vegetation layout.",
+                    metrics: [
+                        { value: "FPV Mode", label: "Flight Profile" },
+                        { value: "120 Acres", label: "Area Mapped" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1508873696983-2df519f0397e?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Kapil Farms Highway Corridor",
+                    location: "Sangareddy, Hyderabad",
+                    desc: "Aerial stabilization tracking scanning coordinates of regional bypass roads, transit corridors, and community parks.",
+                    metrics: [
+                        { value: "4K DCI", label: "Video Standard" },
+                        { value: "24 Mins", label: "Flight Logs" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            5: [
+                {
+                    title: "Serene Valley Topological Plan",
+                    location: "Vikarabad, Hyderabad",
+                    desc: "Isometric vector mapping detailing phase divisions, access paths, and contour lines for 45-acre master planned resort complex.",
+                    metrics: [
+                        { value: "Contour 1:500", label: "Topography Scale" },
+                        { value: "3 Layers", label: "Exploded Deck" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Lotus Villas Exploded Zoning Grid",
+                    location: "Adibatla, Hyderabad",
+                    desc: "Interactive 3D master plans tracking plot numbers, utility grids, contours, and landscape areas for stakeholder presentation.",
+                    metrics: [
+                        { value: "Z-Axis", label: "Exploded View" },
+                        { value: "Vector Map", label: "Base Engine" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            6: [
+                {
+                    title: "Ultra Luxury Villas Promo Cuts",
+                    location: "Proddatur, Andhra Pradesh",
+                    desc: "High-impact video sequence featuring color-graded facade sweeps, ambient sound design, and custom gold-colored kinetic typography.",
+                    metrics: [
+                        { value: "LUT Config", label: "Color Grading" },
+                        { value: "Sound Sync", label: "Audio Profile" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Realty Launch Presentation Cut",
+                    location: "Bangalore, Karnataka",
+                    desc: "Premium commercial reel optimized for screens and social channels, sync'd with custom bass-driven background music cues.",
+                    metrics: [
+                        { value: "9:16 vertical", label: "Social Ratio" },
+                        { value: "Teaser Cut", label: "Format Type" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            7: [
+                {
+                    title: "Villa Complex Interactive HUD",
+                    location: "Gachibowli, Hyderabad",
+                    desc: "Dynamic web dashboard mapping SVG plot plans and syncing occupancy status (sold, available, reserved) in real-time.",
+                    metrics: [
+                        { value: "Live Sync", label: "CRM Pipeline" },
+                        { value: "Responsive", label: "Layout Grid" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Metro City Phase 2 Sales Board",
+                    location: "Bangalore, Karnataka",
+                    desc: "Bespoke digital sales tool that allows sales agents to view unit areas, specifications, and hold plots from the screen.",
+                    metrics: [
+                        { value: "0.2s Latency", label: "Database Refresh" },
+                        { value: "Admin Lock", label: "Security Level" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            8: [
+                {
+                    title: "Skyline Residences 360 VR",
+                    location: "Madhapur, Hyderabad",
+                    desc: "Fully immersive virtual reality viewport center allowing customers to inspect interior finishes, views, and materials.",
+                    metrics: [
+                        { value: "HMD Stream", label: "Platform" },
+                        { value: "360° Sphere", label: "Visual Style" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Emerald Showroom VR Experience",
+                    location: "Kondapur, Hyderabad",
+                    desc: "Immersive pre-construction walkthrough center enabling visitors to warp to various hotspots and change furniture colors.",
+                    metrics: [
+                        { value: "Interactive", label: "Hotspot Engine" },
+                        { value: "4K Panoramic", label: "Projection Mode" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            9: [
+                {
+                    title: "prizmaBrixx Premium Catalog App",
+                    location: "Mumbai, Maharashtra",
+                    desc: "A fully branded property listing mobile application featuring fluid scrolling cards, deep filtering, and chat support.",
+                    metrics: [
+                        { value: "iOS / Android", label: "OS Target" },
+                        { value: "Haptic Mimic", label: "Design System" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Horizon Heights Buyer Progress Tracker",
+                    location: "Bangalore, Karnataka",
+                    desc: "Mobile customer portal providing construction phase progression tracking, digital document signing, and payment modules.",
+                    metrics: [
+                        { value: "SSL Encrypted", label: "Security" },
+                        { value: "Push Alerts", label: "Notifications" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            10: [
+                {
+                    title: "Vaaraahi City Coffee Table Book",
+                    location: "Proddatur, Andhra Pradesh",
+                    desc: "A double-page printed corporate marketing catalog with gold-foil hot stamping and custom layouts mapping regional highways.",
+                    metrics: [
+                        { value: "Pantone Gold", label: "Ink Finish" },
+                        { value: "Silk Matte", label: "Paper Type" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "Aura Living Premium Brand Standards",
+                    location: "Jubilee Hills, Hyderabad",
+                    desc: "Brand identity systems, corporate stationery mockups, and typography guidelines built to emphasize luxury positioning.",
+                    metrics: [
+                        { value: "Vector Book", label: "Format Standard" },
+                        { value: "Outfit + Garamond", label: "Fonts System" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1561070791-26c113006238?auto=format&fit=crop&w=800&q=80"
+                }
+            ],
+            11: [
+                {
+                    title: "NovaMark Campaign Funnels",
+                    location: "HITEC City, Hyderabad",
+                    desc: "Meta & Google Ads performance campaigns integrated with CRM triggers, boosting lead quality and scheduling site visits automatically.",
+                    metrics: [
+                        { value: "1,200+ Leads", label: "Volume" },
+                        { value: "3.2x ROI", label: "Return Multiple" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80"
+                },
+                {
+                    title: "LinkedIn B2B Acquisition Pipeline",
+                    location: "Bangalore, Karnataka",
+                    desc: "Qualified lead generation sequences targeting corporate buyers and NRI investors, achieving high-value deal pipeline expansion.",
+                    metrics: [
+                        { value: "95% Qualified", label: "Accuracy Index" },
+                        { value: "Automated", label: "Sync Engine" }
+                    ],
+                    image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=800&q=80"
+                }
+            ]
+        };
+
+        const modal = document.getElementById('portfolio-modal');
+        const modalServiceTag = document.getElementById('modal-service-tag');
+        const modalServiceTitle = document.getElementById('modal-service-title');
+        const modalProjectsGrid = document.getElementById('modal-projects-grid');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCloseBackdrop = document.getElementById('modal-close-backdrop');
+
+        function openPortfolioModal(serviceId, serviceHeading) {
+            // Set service info
+            modalServiceTag.innerText = `SEC.0${serviceId} // INTEGRATED SERVICES`;
+            modalServiceTitle.innerText = serviceHeading;
+
+            // Clear old projects
+            modalProjectsGrid.innerHTML = '';
+
+            // Get projects from database
+            const projects = PORTFOLIO_DATABASE[serviceId] || [];
+
+            // Populate project cards
+            projects.forEach(proj => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.innerHTML = `
+                    <div class="project-image-wrapper">
+                        <img src="${proj.image}" class="project-image" alt="${proj.title}">
+                    </div>
+                    <div class="project-content">
+                        <div class="project-location">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span>${proj.location}</span>
+                        </div>
+                        <h4 class="project-title">${proj.title}</h4>
+                        <p class="project-desc">${proj.desc}</p>
+                        <div class="project-metrics">
+                            <div class="metric-value">
+                                ${proj.metrics[0].value} <span style="color: var(--muted); font-size: 8px;">// ${proj.metrics[0].label}</span>
+                            </div>
+                            <div class="metric-value">
+                                ${proj.metrics[1].value} <span style="color: var(--muted); font-size: 8px;">// ${proj.metrics[1].label}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                modalProjectsGrid.appendChild(card);
+            });
+
+            // Show modal and lock scrolls
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            if (typeof lenis !== 'undefined') {
+                lenis.stop();
+            }
+
+            // Animate cards entry using GSAP
+            gsap.fromTo('.project-card', 
+                { opacity: 0, y: 30 }, 
+                { opacity: 1, y: 0, duration: 0.6, stagger: 0.15, ease: 'power3.out', delay: 0.2 }
+            );
+        }
+
+        function closePortfolioModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            if (typeof lenis !== 'undefined') {
+                lenis.start();
+            }
+        }
+
+        // Bind event listeners for closing
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closePortfolioModal);
+        if (modalCloseBackdrop) modalCloseBackdrop.addEventListener('click', closePortfolioModal);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closePortfolioModal();
+            }
+        });
+
+        // Hover cursor states for View Works buttons
+        document.querySelectorAll('.section-cta').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                cursor.style.width = '48px';
+                cursor.style.height = '48px';
+                cursor.style.borderColor = 'var(--white)';
+                cursor.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                cursor.style.width = '24px';
+                cursor.style.height = '24px';
+                cursor.style.borderColor = 'var(--gold)';
+                cursor.style.backgroundColor = 'transparent';
+            });
+        });
+    </script>
+</body>
+
+</html>
